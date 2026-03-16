@@ -1,0 +1,607 @@
+/* CSS muuttuja - värit ja fontit */
+:root {
+    /* Taustavärit */
+    --bg: #07080F;
+    --bg2: #0B0C18;
+    --bg3: #10111E;
+    --bord: #1A1A30;
+
+    /* Toiminnalliset värit - tila */
+    --green: #00FF41;
+    --yellow: #FFB800;
+    --red: #FF3333;
+    --purple: #C84FFF;
+    --blue: #0AAEFF;
+
+    /* Tekstivärit */
+    --tx: #7A70A0;
+    --tx2: #C8B8F0;
+    --tx3: #E8D8FF;
+
+    /* Fontit */
+    --font-mono: 'Share Tech Mono', 'Courier New', monospace;
+    --font-display: 'Rajdhani', sans-serif;
+}
+
+/* Nollataan selaimen oletustyylit */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background: var(--bg);
+    color: var(--tx2);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.4;
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+/* Linkit ilman alleviivausta */
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+/* Animaatiot */
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+}
+/* Shimmer efekti baareissa - liikkuva kiilto */
+@keyframes shimmer {
+    0% { background-position: 200% center; }
+    100% { background-position: -200% center; }
+}
+/* Sisääntuloanimaatio - elementit liukuvat sisään käynnistyessä */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Yläpalkki */
+.topbar {
+    background: var(--bg2);
+    border-bottom: 2px solid var(--purple);
+    display: flex;
+    align-items: stretch;
+    height: 56px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+/* Logo */
+.logo {
+    padding: 0 20px;
+    border-right: 1px solid var(--bord);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.logo-name {
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--purple);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    line-height: 1;
+}
+
+/* .SYS osa logosta tummempana */
+.logo-name span { color: var(--tx); }
+
+.logo-sub {
+    font-size: 8px;
+    color: var(--tx);
+    letter-spacing: 3px;
+    margin-top: 3px;
+    text-transform: uppercase;
+}
+
+/* Navigaatio */
+.nav {
+    display: flex;
+    align-items: stretch;
+}
+
+.nav-link {
+    padding: 0 16px;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--tx);
+    display: flex;
+    align-items: center;
+    border-right: 1px solid var(--bord);
+    cursor: pointer;
+    transition: color 0.15s;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+}
+
+.nav-link:hover { color: var(--tx3); }
+
+/* Aktiivinen navigaatio linkki */
+.nav-link.active {
+    color: var(--purple);
+    border-bottom: 2px solid var(--purple);
+}
+
+/* Oikean puolen status-solut */
+.topbar-right {
+    margin-right: auto;
+    display: flex;
+    align-items: stretch;
+}
+
+.stat-cell {
+    padding: 0 16px;
+    border-left: 1px solid var(--bord);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.stat-label {
+    font-size: 8px;
+    letter-spacing: 2px;
+    color: var(--tx);
+    text-transform: uppercase;
+}
+
+.stat-value {
+    font-family: var(--font-display);
+    font-size: 15px;
+    font-weight: 600;
+    margin-top: 2px;
+    color: var(--tx3);
+}
+
+/* Väliluokat stat-arvoille */
+.stat-value.purple { color: var(--purple); }
+.stat-value.red { color: var(--red); }
+.stat-value.green { color: var(--green); }
+
+/* Live metrics rivi */
+.metrics-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--bord);
+    border-bottom: 1px solid var(--bord);
+}
+
+.metric-card {
+    background: var(--bg2);
+    padding: 14px 18px;
+    position: relative;
+    overflow: hidden;
+    animation: fadeIn 0.4s ease forwards;
+    border-top: 2px solid var(--purple);
+}
+
+.metric-label {
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--tx);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+}
+
+.metric-value {
+    font-family: var(--font-display);
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--purple);
+    transition: color 0.5s ease;
+}
+
+/* Minibar käyttöasteen alla */
+.metric-bar-track {
+    height: 3px;
+    background: var(--bg3);
+    border-radius: 2px;
+    margin-top: 8px;
+    overflow: hidden;
+}
+
+.metric-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    background: var(--purple);
+    transition: width 0.8s ease, background 0.5s ease;
+    width: 0%;
+    background-size: 200% 100%;
+    animation: shimmer 3s linear infinite;
+}
+
+.metric-sub {
+    font-size: 10px;
+    color: var(--tx);
+    margin-top: 5px;
+}
+
+/* Pääsisältö */
+.main-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 260px;
+    gap: 1px;
+    background: var(--bord);
+    min-height: calc(100vh - 56px - 48px - 80px);
+}
+
+.column {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    background: var(--bord);
+}
+
+/* Paneelit */
+.panel {
+    background: var(--bg2);
+    padding: 14px 16px;
+    flex: 1;
+    animation: fadeIn 0.5s ease forwards;
+}
+
+.panel-title {
+    font-size: 9px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--tx);
+    margin-bottom: 12px;
+    padding-bottom: 7px;
+    border-bottom: 1px solid var(--bord);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Paneelin oikeassa yläkulmassa badge/merkki */
+.panel-badge {
+    font-size: 8px;
+    padding: 2px 7px;
+    border-radius: 2px;
+    letter-spacing: 1px;
+    background: var(--bg3);
+    color: var(--tx);
+    border: 1px solid var(--bord);
+}
+
+/* Väriluokat badgeille */
+.panel-badge.purple { color: var(--purple); border-color: rgba(200,79,255,0.3); background: rgba(200,79,255,0.08); }
+.panel-badge.green { color: var(--green); border-color: rgba(0,255,65,0.3); background: rgba(0,255,65,0.06);  }
+.panel-badge.red { color: var(--red); border-color: rgba(255,51,51,0.3); background: rgba(255,51,51,0.08); }
+.panel-badge.yellow { color: var(--yellow); border-color: rgba(255,184,0,0.3); background: rgba(255,184,0,0.06); }
+
+/* Bottleneck barit */
+.bottleneck-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.bk-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.bk-name {
+    width: 44px;
+    font-size: 9px;
+    color: var(--tx);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    flex-shrink: 0;
+}
+
+.bk-track {
+    flex: 1;
+    height: 10px;
+    background: var(--bg3);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.bk-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 1s ease;
+    width: 0%;
+}
+
+.bk-pct {
+    width: 34px;
+    text-align: right;
+    font-size: 9px;
+}
+
+.bottleneck-msg {
+    font-size: 10px;
+    color: var(--tx);
+    margin-top: 4px;
+    line-height: 1.5;
+}
+
+/* Prosessitaulu */
+.process-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10px;
+}
+
+.process-table th {
+    padding: 4px 6px;
+    text-align: left;
+    font-size: 8px;
+    letter-spacing: 2px;
+    color: var(--tx);
+    font-weight: 400;
+    border-bottom: 1px solid var(--bord);
+    text-transform: uppercase;
+}
+
+.process-table td {
+    padding: 5px 6px;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+    color: var(--tx2);
+}
+
+/* Zombie-prosessit punaisella */
+.process-table tr.zombie td { color: var(--red); }
+
+/* Hover efekti riveille */
+.process-table tr:hover { background: rgba(200,79,255,0.04); }
+
+/* Zombie-badge Z-kirjaimella */
+.zombie-badge {
+    background: rgba(255,51,51,0.15);
+    color: var(--red);
+    font-size: 8px;
+    padding: 1px 5px;
+    border: 1px solid rgba(255,51,51,0.3);
+    border-radius: 2px;
+}
+
+/* Levytila barit */
+.disk-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.disk-name {
+    width: 72px;
+    font-size: 9px;
+    color: var(--tx);
+    flex-shrink: 0;
+}
+
+.disk-track {
+    flex: 1;
+    height: 9px;
+    background: var(--bg3);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.disk-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 1s ease;
+}
+
+.disk-pct {
+    width: 36px;
+    text-align: right;
+    font-size: 9px;
+}
+
+.disk-forecast-msg {
+    font-size: 10px;
+    color: var(--tx);
+    margin-top: 8px;
+    line-height: 1.5;
+}
+
+/* Hälytykset */
+.alert-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--red);
+    display: inline-block;
+    animation: blink 0.7s step-end infinite;
+}
+
+/* Ei hälytyksiä, piste piilotettu */
+.alert-dot.hidden { display: none; }
+
+.alert-items {
+    margin-bottom: 7px;
+    padding: 8px 10px;
+    border-left: 2px solid;
+    border-radius: 0 2px 2px 0;
+}
+
+/* Hälytysvärit tyypin mukaan */
+.alert-item.critical {
+    border-color: var(--red);
+    background: rgba(255,51,51,0.06);
+}
+
+.alert-item.warning {
+    border-color: var(--yellow);
+    background: rgba(255,184,0,0.05);
+}
+
+.alert-item.info {
+    border-color: var(--purple);
+    background: rgba(200,79,255,0.05);
+}
+
+.alert-tag {
+    font-size: 8px;
+    letter-spacing: 2px;
+    font-weight: 700;
+    margin-bottom: 3px;
+    text-transform: uppercase;
+}
+
+.alert-item.critical .alert-tag { color: var(--red); }
+.alert-item.warning .alert-tag { color: var(--yellow); }
+.alert-item.info .alert-tag { color: var(--purple); }
+
+.alert-msg {
+    font-size: 10px;
+    color: var(--tx2);
+    line-height: 1.4;
+}
+
+.alert-time {
+    font-size: 9px;
+    color: var(--tx);
+    margin-top: 2px;
+}
+
+/* Ei hälytyksiä -viesti */
+.no-alerts {
+    font-size: 10px;
+    color: var(--tx);
+    padding: 8px 0;
+}
+
+/* Verkko */
+.net-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.net-cell {
+    background: var(--bg3);
+    padding: 10px;
+    border-radius: 3px;
+    text-align: center;
+    border: 1px solid var(--bord);
+}
+
+.net-label {
+    font-size: 8px;
+    letter-spacing: 2px;
+    color: var(--tx);
+    text-transform: uppercase;
+}
+
+.net-val {
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 600;
+    margin-top: 4px;
+}
+
+.net-val.green { color: var(--green); }
+.net-val.purple { color: var(--purple); }
+
+.net-total {
+    font-size: 10px;
+    color: var(--tx);
+}
+
+/* Memory leak analyysi */
+.leak-msg {
+    font-size: 10px;
+    color: var(--tx);
+    margin-top: 8px;
+    line-height: 1.5;
+}
+
+/* Terminaali-loki */
+.terminal {
+    background: var(--bg);
+    border-top: 1px solid var(--bord);
+    padding: 8px 16px;
+    height: 48px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+}
+
+.terminal-log {
+    font-size: 10px;
+    color: var(--tx);
+    line-height: 1.6;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Terminaalin väriluokat */
+.log-ok { color: var(--green); }
+.log-warn { color: var(--yellow); }
+.log-err { color: var(--red); }
+.log-sys { color: var(--purple); }
+
+/* Vilkkuva kursori terminaalissa */
+.terminal-cursor {
+    display: inline-block;
+    width: 7px;
+    height: 11px;
+    background: var(--purple);
+    vertical-align: bottom;
+    animation: blink 0.7s step-end infinite;
+    margin-left: 2px;
+}
+
+/* Latausviesti ennen datan saapumista */
+.loading-text {
+    font-size: 10px;
+    color: var(--tx);
+    padding: 8px 0;
+}
+
+/* Väriluokat teskteille */
+.text-green { color: var(--green) !important; }
+.text-yellow { color: var(--yellow) !important; }
+.text-red { color: var(--red) !important; }
+.text-purple { color: var(--purple) !important; }
+.text-muted { color: var(--tx) !important; }
+
+/* Chart.JS graafien tyylit */
+/* Canvas elementit eivät saa ylittää paneelin leveyttä */
+canvas { max-width: 100%; }
+
+/* Responsiivisuus */
+@media (max-width: 1200px) {
+    .main-grid { grid-template-columns: 1fr 1fr; }
+
+    /* Oikea palsta siirtyy alas */
+    .column:last-child {
+        grid-column: 1 / -1;
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+
+    .column:last-child .panel {
+        flex: 1;
+        min-width: 250px;
+    }
+}
+@media (max-width: 768px) {
+    .metrics-row { grid-template-columns: repeat(2, 1fr); }
+    .main-grid { grid-template-columns: 1fr; }
+    .nav { display: none; }
+    .topbar-right .stat-cell:not(:last-child) { display: none; }
+}
