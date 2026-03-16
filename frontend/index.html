@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="fi">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>GHOST.SYS - Resource Analytics</title>
+
+        <!-- Fontit -->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+
+        <!-- Chart.js - graafien piirtämiseen -->
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+        <!-- Oma CSS -->
+        <link rel="stylesheet" href="">
+    </head>
+
+    <body>
+        
+        <!-- Yläpalkki - logo, navigaatio, status -->
+        <header class="topbar">
+
+            <!-- Logo -->
+            <div class="logo">
+                <div class="logo-name">GHOST<span>.SYS</span></div>
+                <div class="logo-sub">RESOURCE ANALYTICS</div>
+            </div>
+
+            <!-- Navigaatio -->
+            <nav class="nav">
+                <a class="nav-link active" data-section="overview">Overview</a>
+                <a class="nav-link" data-section="trends">Trends</a>
+                <a class="nav-link" data-section="processes">Processes</a>
+                <a class="nav-link" data-section="alerts">Alerts</a>
+            </nav>
+
+            <!-- Status-tiedot oikealla -->
+            <div class="topbar-right">
+                <div class="stat-cell">
+                    <div class="stat-label">NODE</div>
+                    <div class="stat-value purple" id="node-name">SRV-01</div>
+                </div>
+                <div class="stat-cell">
+                    <div class="stat-label">MODE</div>
+                    <div class="stat-value purple" id="mode-indicator">LIVE</div>
+                </div>
+                <div class="stat-cell">
+                    <div class="stat-label">ALERTS</div>
+                    <div class="stat-value red" id="alert-count">0</div>
+                </div>
+                <div class="stat-cell">
+                    <div class="stat-label">TIME</div>
+                    <div class="stat-value purple" id="clock">--:--:--</div>
+                </div>
+            </div>
+
+        </header>
+
+        <!-- Live metrics rivi -->
+        <section class="metrics-row">
+
+            <!-- CPU -->
+            <div class="metric-card" id="cpu-card">
+                <div class="metric-label">CPU USAGE</div>
+                <div class="metric-value" id="cpu-value">--%</div>
+                <div class="metric-bar-track">
+                    <div class="metric-bar-fill" id="cpu-bar"></div>
+                </div>
+                <div class="metric-sub" id="cpu-sub">-- cores</div>
+            </div>
+
+            <!-- RAM -->
+            <div class="metric-card" id="ram-card">
+                <div class="metric-label">MEMORY</div>
+                <div class="metric-value" id="ram-value">--%</div>
+                <div class="metric-bar-track">
+                    <div class="metric-bar-fill" id="ram-bar"></div>
+                </div>
+                <div class="metric-sub" id="ram-sub">-- / -- GB</div>
+            </div>
+
+            <!-- Levy -->
+            <div class="metric-card" id="disk-card">
+                <div class="metric-label">DISK</div>
+                <div class="metric-value" id="disk-value">--%</div>
+                <div class="metric-bar-track">
+                    <div class="metric-bar-fill" id="disk-bar"></div>
+                </div>
+                <div class="metric-sub" id="disk-sub">-- / -- GB</div>
+            </div>
+
+            <!-- Verkko -->
+            <div class="metric-card" id="net-card">
+                <div class="metric-label">NETWORK</div>
+                <div class="metric-value" id="net-value">↑-- ↓--</div>
+                <div class="metric-bar-track">
+                    <div class="metric-bar-fill" id="net-bar"></div>
+                </div>
+                <div class="metric-sub" id="net-sub">MB/s · eth0</div>
+            </div>
+        </section>
+
+        <!-- Pääsisältö -->
+        <main class="main-grid">
+
+            <!-- Vasen palsta - CPU trendi + bottleneck -->
+            <div class="column">
+
+                <!-- CPU trendi -->
+                <div class="panel">
+                    <div class="panel-title">CPU — 7 PÄIVÄN TRENDI<span class="panel-badge purple">WEEKLY</span></div>
+
+                    <!-- Chart.js piirtää graafin tähän canvas-elementtiin -->
+                    <canvas id="cpu-chart" height="140"></canvas>
+                </div>
+
+                <!-- Bottlenack analyysi -->
+                <div class="panel">
+                    <div class="panel-title">BOTTLENECK ANALYYSI<span class="panel-badge" id="bottleneck-badge">--</span></div>
+                    <div class="bottleneck-list" id="bottleneck-list">
+
+                        <!-- app.js täyttää tämän -->
+                        <div class="loading-text">Ladataan...</div>
+                    </div>
+                    <div class="bottleneck-msg" id="bottleneck-msg"></div>
+                </div>
+            </div>
+
+            <!-- Keski palsta - prosessit + levy -->
+            <div class="column">
+
+                <!-- Prosessit -->
+                <div class="panel">
+                    <div class="panel-title">
+                        PROSESSIT
+                        <span class="panel-badge red" id="zombie-badge">0 ZOMBIE</span>
+                    </div>
+                    <table class="process-table">
+                        <thead>
+                            <tr>
+                                <th>PID</th>
+                                <th>NAME</th>
+                                <th>CPU</th>
+                                <th>MEM</th>
+                                <th>ST</th>
+                            </tr>
+                        </thead>
+                        <tbody id="process-tbody">
+
+                            <!-- app.js täyttää tämän -->
+                            <tr><td colspan="5" class="loading-text">Ladataan...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Levytila -->
+                <div class="panel">
+                    <div class="panel-title">
+                        LEVYTILA
+                        <span class="panel-badge" id="disk-forecast-badge">--</span>
+                    </div>
+                    <div id="disk-details">
+
+                        <!-- app.js täyttää tämän -->
+                        <div class="loading-text">Ladataan...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Oikea palsta - hälytykset + verkko -->
+            <div class="column">
+
+                <!-- Hälytykset -->
+                <div class="panel">
+                    <div class="panel-title">
+                        HÄLYTYKSET
+                        <!-- Vilkkuva piste kun on aktiivisia hälytyksiä -->
+                        <span class="alert-dot" id="alert-dot"></span>
+                    </div>
+                    <div id="alerts-list">
+                        
+                        <!-- app.js täyttää tämän -->
+                        <div class="loading-text">Ladataan...</div>
+                    </div>
+                </div>
+
+                <!-- Verkko -->
+                <div class="panel">
+                    <div class="panel-title">VERKKO<span class="panel-badge green">eth0</span></div>
+                    <div class="net-grid">
+                        <div class="net-cell">
+                            <div class="net-label">UPLOAD</div>
+                            <div class="net-val green" id="net-up">-- MB/s</div>
+                        </div>
+                        <div class="net-cell">
+                            <div class="net-label">DOWNLOAD</div>
+                            <div class="net-val purple" id="net-down">-- MB/s</div>
+                        </div>
+                    </div>
+                    <div class="net-total" id="net-total">Päivän siirto: ladataan...</div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-title">MEMORY ANALYYSI<span class="panel-badge" id="leak-badge">--</span></div>
+
+                    <!-- RAM-trendi Chart.js -->
+                    <canvas id="ram-chart" height="80"></canvas>
+                    <div class="leak-msg" id="leak-msg">Ladataan...</div>
+                </div>
+
+            </div>
+
+        </main>
+
+        <!-- Terminaali loki -->
+        <footer class="terminal">
+            <div class="terminal-log" id="terminal-log"><span class="log-ok">[OK]</span> GHOST.SYS käynnistyy — yhdistetään backendiin...</div>
+        </footer>
+
+    </body>
+</html>
