@@ -8,21 +8,17 @@
 
 # Tätä kutsutaan main.py:stä kun frontend pyytää analyysidataa.
 
-from database import get_history, get_weekly_summary    # Haetaan historia tietokannasta
-from collector import collect_metrics                   # Haetaan live-data prosessianalyysiin
-from datetime import datetime                           # Aikojen käsittelyyn
+from database import get_history, get_weekly_summary   
+from collector import collect_metrics            
+from datetime import datetime  
 
 # Zombie prosessien analyysi
-# Zombie prosessi on prosessi joka on lopettanut suorituksensa mutta
-# jonka vanhempiprosessi ei ole siivonnut sitä pois.
 # Ne eivät kuluta CPU:ta tai muistia mutta vievät prosessitaulusta tilaa
 # Liian monta zombieta voi hidastaa järjestelmää
 
 def analyze_zombies(processes: list) -> dict:
 
     # Analysoi prosessilistan
-    # Parametri: collector.py:n palauttama prosessilista
-    # Palautus: dictionary jossa zombie-prosessit ja analyysin tulos
     zombies = [p for p in processes if p.get("zombie", False)]
 
     # Lasketaan vakavuusaste zombien määrän perusteella
@@ -46,17 +42,10 @@ def analyze_zombies(processes: list) -> dict:
 # Memory leak -patternin tunnistus
 # Memory leak tarkoittaa että ohjelma varaa muistia mutta ei vapauta sitä.
 # Se näkyy datassa tasaisena muistin kasvuna ajan kuluessa.
-# Tunnistuslogiikka:
-#   - Otetaan viimeisen 2 tunnin data
-#   - Lasketaan muistin keskiarvo ensimmäiseltä puoliskolta ja toiselta puoliskolta
-#   - Jos jälkimmäinen puolisko on selkeästi suurempi = leak-pattern
 
 def analyze_memory_leak(history: list) -> dict:
 
     # Tunnistaa memory leak -patternin historiadatasta
-    # Parametri: history: get_history()-funktion palauttama lista mittauksista
-    # Palautus: dictionary jossa analyysin tulos ja ennuste
-    # Tarvitaan vähintään 10 mittausta järkevään analyysiin.
     if len(history) < 10:
         return {
             "detected": False,
@@ -79,12 +68,11 @@ def analyze_memory_leak(history: list) -> dict:
     growth = avg_second - avg_first
 
     # Muutetaan kasvu tuntikohtaiseksi
-    # Oletetaan että mittauksia on joka 5. sekunti = 720 mittausta per tunti
     growth_per_hour = round(growth / (len(history) / 720), 2)
 
     # Ennustetaan milloin muisti täyttyy (100%) nykyisellä kasvuvauhdilla
     if growth_per_hour > 0 and len(history) > 0:
-        current_ram = history[-1]["ram_percent"] # Viimeisin arvo
+        current_ram = history[-1]["ram_percent"]
         hours_until_full = (100 - current_ram) / growth_per_hour
         days_until_full = round(hours_until_full / 24, 1)
     else:
@@ -116,15 +104,10 @@ def analyze_memory_leak(history: list) -> dict:
     }
 
 # Bottleneck - analyysi
-# Bootleneck = pullonkaula = se resurssi joka rajoittaa järjestelmän suorituskykyä
-# Analysoidaan CPU, RAM, levy, ja verkko ja määritellään mikä on kriittisin
 
 def analyze_bottleneck(current_metrics: dict) -> dict:
 
     # Analysoi nykyiset metriikat ja tunnistaa pullonkaulan
-    # Parametri: current_metrics: collect_metrics()-funktion palauttama dictionary
-    # Palautus: dictionary jossa pullonkaula-analyysin tulos
-
     # Ketätään kaikkien resurssien käyttöasteet yhteen listaan
     resources = [
         {
@@ -156,7 +139,7 @@ def analyze_bottleneck(current_metrics: dict) -> dict:
         message = f"Pullonkaula: {bottleneck['name']} {bottleneck['percent']}% - toimenpiteet tarpeellisia"
     elif bottleneck["status"] == "warning":
         severity = "warning"
-        message = f"KOrkea käyttöaste: {bottleneck['name']} {bottleneck['percent']}% - seuraa tilannetta"
+        message = f"Korkea käyttöaste: {bottleneck['name']} {bottleneck['percent']}% - seuraa tilannetta"
     else:
         severity = "ok"
         message = "Ei pullonkauloja havaittu - järjestelmä toimii normaalisti"
@@ -171,13 +154,9 @@ def analyze_bottleneck(current_metrics: dict) -> dict:
 
 # CPU - trendi
 # Lasketaan onko CPU-käyttö kasvussa tai laskussa viimeisen tunnin aikana
-# Käytetään yksinkertaista lineaarista trendiä:
-#   - verrataan ensimmäisen puoliskon keskiarvoa toisen puoliskon keskiarvoon
 
 def analyze_cpu_trend(history: list) -> dict:
 
-    # Parametri: history: get_history()-funktion palauttama lista
-    # Palauttaa: dictionary jossa trendin suunta ja muutos
     if len(history) < 6:
         return {
             "trend": "unknown",
@@ -212,12 +191,9 @@ def analyze_cpu_trend(history: list) -> dict:
 
 # Disk - ennuste
 # Ennustetaan milloin levy täyttyy nykyisellä kasvuvauhdilla
-# Vertaillaan levun käyttöä viikon alussa ja lopussa
 
 def analyze_disk_forecast(history: list, current_disk_percent: float) -> dict:
 
-    # Parametrit: history: historiadatan listasta, current_disk_percent: levyn nykyinen käyttöaste
-    # Palauttaa: dictionary jossa ennuste ja vakavuus
     if len(history) < 10:
         return {
             "severity": "ok",
@@ -273,15 +249,10 @@ def analyze_disk_forecast(history: list, current_disk_percent: float) -> dict:
     }
 
 # Hälytykset - kootaan kaikki analyysit yhteen
-# Tämä on pääfunktio jota main.py kutsuu
-# Se ajaa kaikki analyysit ja palauttaa yhtenäisen listan hälytyksiä
 
 def get_alerts(current_metrics: dict, history: list) -> list:
 
     # Kokoaa kaikki hälytykset yhdeksi listaksi
-    # Parametrit: current_metrics: viimeisin mittaus collect_metrics():stä
-    # Palautus: lista hälytys-dictionaryjä, vakavimmat ensin
-
     alerts = []
 
     # Zombie analyysi
@@ -340,8 +311,6 @@ def get_alerts(current_metrics: dict, history: list) -> list:
 
 
 # Täysi analyysi - kaikki kerralla
-# Tätä kutsutaan /api/analysis -endpointista
-# Palauttaa kaiken analyysidatan yhdessä dictionaryssä
 
 def run_full_analysis() -> dict:
 

@@ -446,13 +446,6 @@ a {
 /* Ei hälytyksiä, piste piilotettu */
 .alert-dot.hidden { display: none; }
 
-.alert-items {
-    margin-bottom: var(--gap-sm);
-    padding: var(--gap-sm);
-    border-left: 2px solid;
-    border-radius: 0 2px 2px 0;
-}
-
 /* Hälytysvärit tyypin mukaan */
 .alert-item.critical {
     border-color: var(--red);

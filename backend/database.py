@@ -13,25 +13,17 @@ from datetime import datetime, timedelta
 
 # Tietokannan sijainti
 # Tallentuu projektin juurikansioon
-# os.path.dirname(__file__) palauttaa sen kansion polun missä tämä tiedosto on
-# os.path.join yhdistää polut oikein eri käyttöjärjestelmillä (/ vs \).
 
-# __file__ = tämän tiedoston polku (database.py)
-# dirname = sen kansio (backend/)
-# join .. = yksi taso ylös (ghost-sys/)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DB_PATH = os.path.join(BASE_DIR, "ghost-sys.db")
 
 # Tietokanta yhteyden avaaminen
-# Kutsutaan aina kun tarvitaan yhteys tietokantaan
 # SQLite luo tietokannan jos sitä ei ole olemassa
 def get_connection() -> sqlite3.Connection:
 
     # Avaa ja palauttaa yhteyden tietokantaan
     conn = sqlite3.connect(DB_PATH)
 
-    # row_factory = sqlite3.Row mahdollistaa sen että rivejä voi käsitellä
-    # kuin dictionaryjä: rivi["cpu_percent"] sen sijaan että rivi[0]
     conn.row_factory = sqlite3.Row
 
     return conn
@@ -39,7 +31,6 @@ def get_connection() -> sqlite3.Connection:
 # Taulujen luominen
 # Tätä funktiota kutsutaan kerran kun ohjelma käynnistyy
 # "CREATE TABLE IF NOT EXISTS" tarkoittaa että taulu luodaan vain
-# jos sitä ei jo ole - eli se on turvallinen ajaa useamman kerran
 def init_db():
 
     conn = get_connection()
@@ -81,8 +72,6 @@ def init_db():
             )
         """)
 
-        # Indeksi timestamp-sarakkeelle nopeuttaa hakuja huomattavasti
-        # kun haetaan dataa tietyltä aikaväliltä (esim. viimeinen 24h)
         conn.execute("""
             CREATE INDEX IF NOT EXISTS idx_metrics_timestamp
             ON metrics (timestamp)
@@ -93,9 +82,6 @@ def init_db():
     print(f"[DB] Tietokanta alustettu: {DB_PATH}")
 
 # Metriikoiden tallennus
-# Tätä funktiota kutsutaan joka 5. sekunti main.py:stä
-# Se ottaa collect_metrics()-funktion palauttaman dictionaryn
-# ja tallentaa sen tietokantaan
 def save_metrics(data: dict):
 
     conn = get_connection()
@@ -155,14 +141,10 @@ def save_metrics(data: dict):
     conn.close()
 
 # Historian haku trendejä varten
-# frontend pyytää historiaa trendikaaviota varten
-# hours-parametri ketoo kuinka monen tunnin data haetaan
 def get_history(hours: int = 24) -> list:
 
     conn = get_connection()
 
-    # Lasketaan mistä ajasta lähtien haetaan
-    # timedelta(hours=hours) laskee oikean aikarajan
     since = (datetime.now() - timedelta(hours=hours)).isoformat()
 
     cursor = conn.execute("""
@@ -186,15 +168,10 @@ def get_history(hours: int = 24) -> list:
     return rows
 
 # Viikko yhteenveto - 7 päivänpäiväkohtaiset keskiarvot
-# Tätä käytetään CPU-trendikaaviossa jossa näkyy 7 päivää
-# Sen sijaan että palautetaan tuhansia rivejä, lasketaan päiväkohtaiset
-# keskiarvot - paljon kevyempää frontendille
 def get_weekly_summary() -> list:
 
     conn = get_connection()
 
-    # SQLiten DATE()-funktio leikkaa timestampista pelkän päivämäärän
-    # AVG() laskee keskiarvon, MAX() hakee päivän huippuarvon
     cursor = conn.execute("""
         SELECT
             DATE(timestamp) AS day,
@@ -214,10 +191,31 @@ def get_weekly_summary() -> list:
     conn.close()
     return rows
 
+def get_network_24h() -> dict:
+
+    # Laskee verkkoliikenteen viimeisen 24h aikana
+    conn = get_connection()
+    since = (datetime.now() - timedelta(hours=24)).isoformat()
+
+    result = conn.execute("""
+        SELECT 
+            ROUND(SUM(net_sent_mb), 1) AS total_sent,
+            ROUND(SUM(net_recv_mb), 1) AS total_recv
+        FROM metrics
+        WHERE timestamp >= ?
+    """, (since,)).fetchone()
+
+    conn.close()
+
+    if not result or result["total_sent"] is None:
+        return {"sent_mb": 0, "recv_mb": 0}
+    
+    return {
+        "sent_mb": result["total_sent"],
+        "recv_mb": result["total_recv"]
+    }
 
 # Vanhan datan siivous
-# Kutsutaan kerran päivässä main.py:stä
-# Poistaa yli 30 päivää vanhat rivit jotta tietokanta ei kasva loputtomiin
 def cleanup_old_data(days: int = 30):
 
     conn = get_connection()
@@ -231,14 +229,13 @@ def cleanup_old_data(days: int = 30):
             WHERE timestamp < ?
         """, (cutoff,))
 
-        deleted = cursor.rowcount # Montako riviä poistettiin
+        deleted = cursor.rowcount
 
     conn.close()
 
     if deleted > 0:
         print(f"[DB] Siivous: poistettiin {deleted} vanhaa mittausta (>{days} päivää)")
 
-# Tietokannan tilastot - debuggausta ja ylläpitoa varten
 def get_db_stats() -> dict:
 
     # Palauttaa tietokannan perustilastot
@@ -264,7 +261,6 @@ def get_db_stats() -> dict:
         "db_path": DB_PATH
     }
 
-# Testaus - voidaan ajaa suoraan: python database.py
 if __name__ == "__main__":
     import json
     from collector import collect_metrics # Tuodaan collector testi dataa varten

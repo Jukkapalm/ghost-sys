@@ -22,10 +22,6 @@ def get_status(value: float, warn_at: int = 65, crit_at: int = 85) -> str:
 def collect_live_metrics() -> dict:
 
     # Lukee metriikat psutil-kirjastolla ja palauttaa dictionaryn jossa kaikki tiedot.
-
-    # Mittaa CPU-käytön prosentin 1 sekunnin aikana.
-    # interval = 1 psutil odottaa sekunnin ja mittaa keskiarvon
-    # tarkempi kuin interval = 0 joka antaa pelkän hetkellisen arvon.
     cpu_percent = psutil.cpu_percent(interval=1)
 
     # Montako loogista CPU-ydintä koneessa on
@@ -35,12 +31,10 @@ def collect_live_metrics() -> dict:
     # virtual_memory() palauttaa olion jossa on total, available, used, percent jne.
     ram = psutil.virtual_memory()
     ram_percent = ram.percent
-    ram_used_gb = ram.used / (1024**3) # Muunnetaan tavuista gigatavuiksi
+    ram_used_gb = ram.used / (1024**3)
     ram_total_gb = ram.total / (1024**3)
 
     # Levy
-    # disk_usage('/') lukee juurilevyn käyttötiedot.
-    # windowsilla käytetään 'C:\\' juurilevyn sijaan.
     disk_path = 'C:\\' if os.name == 'nt' else '/'
     disk = psutil.disk_usage(disk_path)
     disk_percent = disk.percent
@@ -48,22 +42,22 @@ def collect_live_metrics() -> dict:
     disk_total_gb = disk.total / (1024**3)
 
     # disk_io_counters() lukee levyn luku/kirjoitusmäärät käynnistymisestä lähtien.
-    # Koska halutaan nopeus (MB/s), lasketaan ero kahden mittauksen välillä.
-    # Tässä otetaan vain hetkellinen arvo - tarkempi laskenta tehdään db:ssä
     disk_io = psutil.disk_io_counters()
     disk_read_mb = round(disk_io.read_bytes / (1024**2), 1) if disk_io else 0
     disk_write_mb = round(disk_io.write_bytes / (1024**2), 1) if disk_io else 0
 
-    # Verkko
-    # net_io_counter() palauttaa kaikki verkkorajapinnat yhteensä.
+    # Verkko - mitataan 24h liikenne
     net_io = psutil.net_io_counters()
-    net_sent_mb = round(net_io.bytes_sent / (1024**2), 1)
-    net_recv_mb = round(net_io.bytes_recv / (1024**2), 1)
+    start_sent  = int(os.getenv('NET_START_SENT', net_io.bytes_sent))
+    start_recv  = int(os.getenv('NET_START_RECV', net_io.bytes_recv))
+    net_sent_mb = max(0.0, round((net_io.bytes_sent - start_sent) / (1024**2), 3))
+    net_recv_mb = max(0.0, round((net_io.bytes_recv - start_recv) / (1024**2), 3))
+
+    os.environ['NET_START_SENT'] = str(net_io.bytes_sent)
+    os.environ['NET_START_RECV'] = str(net_io.bytes_recv)
 
     # Prosessit
     # processes() palauttaa listan kaikista käynnissä olevista prosesseista.
-    # Käydään läpi jokainen ja haetaan tiedot - status 'zombie' tarkoittaa
-    # prosessia joka on lopettanut mutta jota parent-prosessi ei ole siivonnut.
     processes = []
     zombie_count = 0
 
@@ -73,26 +67,34 @@ def collect_live_metrics() -> dict:
             # proc.info on dictionary jossa on kaikki pyydetyt kentät
             info = proc.info
 
-            # Lasketaan muisti megatavuissa
-            mem_mb = round(info['memory_info'].rss / (1024**2), 1) if info['memory_info'] else 0
+            # Ohitetaan System Ilde Process ja nimettömät prosessit
+            if not info['name'] or info['name'] == 'System Idle Process':
+                continue
+
+            # Muisti - tarkistetaan että Memory_info ei ole None
+            mem_mb = 0.0
+            if info['memory_info'] is not None:
+                mem_mb = round(info['memory_info'].rss / (1024**2), 1)
+
+            # Ohitetaan prosessit joilla ei ole muistia eikä nimeä
+            if mem_mb == 0.0 and info['cpu_percent'] == 0.0:
+                continue
 
             is_zombie = info['status'] == psutil.STATUS_ZOMBIE
 
             if is_zombie:
-                zombie_count += 1 # Lasketaan zombiet erikseen hälytystä varten
+                zombie_count += 1
 
             processes.append({
                 "pid": info['pid'],
                 "name": info['name'],
-                "cpu": round(info['cpu_percent'], 1),
+                "cpu": round(info['cpu_percent'] / psutil.cpu_count(), 1),
                 "mem_mb": mem_mb,
                 "status": info['status'],
                 "zombie": is_zombie
             })
 
         except (psutil.NoSuchProcess, psutil.AccessDenied):
-            # Prosessi saattaa loppua kesken iteration tai ei ole oikeuksia
-            # lukea sitä - ohitetaan se
             pass
 
     # Järjestetään prosessit CPU-käytön mukaan laskevasti (suurin ensin)
@@ -127,7 +129,7 @@ def collect_live_metrics() -> dict:
         "network": {
             "sent_mb": net_sent_mb,
             "recv_mb": net_recv_mb,
-            "status": "ok" # Verkko ei yleensä ole pullonkaula - voidaan laajentaa myöhemmin
+            "status": "ok"
         },
         "processes": {
             "total": len(processes),
@@ -137,9 +139,6 @@ def collect_live_metrics() -> dict:
     }
 
 # Simuloitu data live demoa varten
-# CPU piikkejä syntyy satunnaisesti
-# Memory kasvaa hitaasti (simuloi memory leakia)
-# 3 zombie-prosessia on aina olemassa
 
 # Tallennetaan käynnistysaika jotta voidaan laskea "kuinka kauan käynnissä"
 _demo_start_time = time.time()
@@ -149,9 +148,6 @@ _demo_memory_base = 45.0 # Oletusarvo
 
 def collect_demo_metrics() -> dict:
     
-    # Generoi simuloitua dataa, vaihtelee, piikkailee, ja trendit näkyvät
-    
-    # Kuinka monta sekuntia on kulunut käynnistymisestä
     elapsed = time.time() - _demo_start_time
 
     # CPU simulaatio
@@ -165,8 +161,6 @@ def collect_demo_metrics() -> dict:
     cpu_percent = max(5, min(98, cpu_base + cpu_noise + cpu_spike))
 
     # RAM simulaatio
-    # Muisti kasvaa hiljalleen (simuloi memory leakia) - 0.001% per sekunti
-    # Nollataan 80%:n jälkeen jotta demo ei jumiudu korkeaan arvoon
     memory_growth = (elapsed * 0.001) % 35
     ram_percent = _demo_memory_base + memory_growth + random.gauss(0, 2)
     ram_percent = max(30, min(92, ram_percent))
@@ -185,7 +179,6 @@ def collect_demo_metrics() -> dict:
     net_recv = round(max(0, 47 + random.gauss(0, 15)), 1)
 
     # Simuloidut prosessit
-    # Kiinteä lista prosesseista + 3 zombie prosessia
     top_processes = [
         {"pid": 1284, "name": "postgres",  "cpu": round(max(0, 32 + random.gauss(0, 5)), 1),  "mem_mb": 2150, "status": "running", "zombie": False},
         {"pid": 2041, "name": "nginx",     "cpu": round(max(0, 18 + random.gauss(0, 3)), 1),  "mem_mb": 340,  "status": "running", "zombie": False},
@@ -230,12 +223,9 @@ def collect_demo_metrics() -> dict:
     }
 
 # Pääfunktio - valitsee moodin automaattisesti
-# Tätä funktiota kutsutaan muualta (main.py, database.py jne.)
-# Ohjelma tarkistaa MODE-ympäristömuuttujan ja kutsuu oikea funktiota
 
 def collect_metrics() -> dict:
 
-    #os.getenv lukee ympäristömuuttujan - jos sitä ei ole, käytetään oletusta "live"
     mode = os.getenv("MODE", "live").lower()
 
     if mode == "demo":
@@ -244,12 +234,9 @@ def collect_metrics() -> dict:
         return collect_live_metrics()
     
 # Testaus - voidaan ajaa suoraan: python collector.py
-# Tämä lohko suoritetaan vain kun tiedosto ajetaan suoraan,
-# ei kun se importoidaan toisesta tiedostosta.
-# Hyödyllinen testaamiseen kehityksen aikana
 
 if __name__ == "__main__":
-    import json # Tulostetaan data siististi JSON-muodossa
+    import json
 
     print("=== GHOST.SYS collector.py testi ===\n")
 
