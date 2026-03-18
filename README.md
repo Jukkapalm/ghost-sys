@@ -67,7 +67,7 @@ ghost-sys/
 
 ```bash
 # Kloonaa repo
-git clone https://github.com/sinun-käyttäjänimi/ghost-sys.git
+git clone https://github.com/Jukkapalm/ghost-sys.git
 cd ghost-sys
 
 # Asenna riippuvuudet
