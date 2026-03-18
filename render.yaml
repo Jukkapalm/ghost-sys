@@ -2,9 +2,8 @@ services:
   - type: web
     name: ghost-sys
     runtime: python
-    rootDir: backend
     buildCommand: pip install -r requirements.txt
-    startCommand: python main.py
+    startCommand: python backend/main.py
     envVars:
       - key: MODE
         value: demo
