@@ -154,6 +154,10 @@ async def api_status():
 # backend/main.py → .. → ghost-sys/ → frontend/
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FRONTEND_DIR = os.path.join(BASE_DIR, "frontend")
+if not os.path.exists(FRONTEND_DIR):
+    print(f"[ERROR] Frontend-kansiota ei löydy: {FRONTEND_DIR}")
+    print(f"[ERROR] BASE_DIR on: {BASE_DIR}")
+    print(f"[ERROR] Tiedostot BASE_DIR:ssä: {os.listdir(BASE_DIR)}")
 
 
 app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
